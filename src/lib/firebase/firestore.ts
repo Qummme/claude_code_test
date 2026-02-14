@@ -34,12 +34,17 @@ import type {
 // Helper: ユーザーのサブコレクション参照
 // ============================================
 
+function getDb() {
+  if (!db) throw new Error('Firestore is not initialized');
+  return db;
+}
+
 function userCollection(userId: string, collectionName: string) {
-  return collection(db, 'users', userId, collectionName);
+  return collection(getDb(), 'users', userId, collectionName);
 }
 
 function userDoc(userId: string, collectionName: string, docId: string) {
-  return doc(db, 'users', userId, collectionName, docId);
+  return doc(getDb(), 'users', userId, collectionName, docId);
 }
 
 // ============================================
