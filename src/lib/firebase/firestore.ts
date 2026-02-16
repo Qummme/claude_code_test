@@ -14,6 +14,7 @@ import {
   type QueryConstraint,
 } from 'firebase/firestore';
 import { db } from './config';
+import * as mock from '@/lib/mock/firestore';
 import type {
   Task,
   TaskInput,
@@ -31,8 +32,15 @@ import type {
 } from '@/lib/types';
 
 // ============================================
-// Helper: ユーザーのサブコレクション参照
+// Helper
 // ============================================
+
+/**
+ * Firebase未設定かつブラウザ環境 → モックモード
+ */
+function useMock(): boolean {
+  return !db && typeof window !== 'undefined';
+}
 
 function getDb() {
   if (!db) throw new Error('Firestore is not initialized');
@@ -52,6 +60,7 @@ function userDoc(userId: string, collectionName: string, docId: string) {
 // ============================================
 
 export async function getTasks(userId: string, date: string): Promise<Task[]> {
+  if (useMock()) return mock.getTasks(userId, date);
   const q = query(
     userCollection(userId, 'tasks'),
     where('date', '==', date),
@@ -62,6 +71,7 @@ export async function getTasks(userId: string, date: string): Promise<Task[]> {
 }
 
 export async function createTask(userId: string, input: TaskInput): Promise<string> {
+  if (useMock()) return mock.createTask(userId, input);
   const colRef = userCollection(userId, 'tasks');
   const docRef = doc(colRef);
   await setDoc(docRef, {
@@ -79,6 +89,7 @@ export async function updateTask(
   taskId: string,
   data: Partial<Pick<Task, 'title' | 'description' | 'status' | 'order'>>
 ): Promise<void> {
+  if (useMock()) return mock.updateTask(userId, taskId, data);
   await updateDoc(userDoc(userId, 'tasks', taskId), {
     ...data,
     updatedAt: serverTimestamp(),
@@ -86,6 +97,7 @@ export async function updateTask(
 }
 
 export async function deleteTask(userId: string, taskId: string): Promise<void> {
+  if (useMock()) return mock.deleteTask(userId, taskId);
   await deleteDoc(userDoc(userId, 'tasks', taskId));
 }
 
@@ -94,6 +106,7 @@ export async function deleteTask(userId: string, taskId: string): Promise<void> 
 // ============================================
 
 export async function getReflection(userId: string, date: string): Promise<Reflection | null> {
+  if (useMock()) return mock.getReflection(userId, date);
   const snapshot = await getDoc(userDoc(userId, 'reflections', date));
   if (!snapshot.exists()) return null;
   return { date, ...snapshot.data() } as Reflection;
@@ -104,6 +117,7 @@ export async function saveReflection(
   date: string,
   data: Pick<Reflection, 'items' | 'mood'>
 ): Promise<void> {
+  if (useMock()) return mock.saveReflection(userId, date, data);
   await setDoc(
     userDoc(userId, 'reflections', date),
     {
@@ -120,12 +134,14 @@ export async function saveReflection(
 // ============================================
 
 export async function getHabits(userId: string): Promise<Habit[]> {
+  if (useMock()) return mock.getHabits(userId);
   const q = query(userCollection(userId, 'habits'), orderBy('order', 'asc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() }) as Habit);
 }
 
 export async function createHabit(userId: string, input: HabitInput): Promise<string> {
+  if (useMock()) return mock.createHabit(userId, input);
   const colRef = userCollection(userId, 'habits');
   const docRef = doc(colRef);
   await setDoc(docRef, {
@@ -143,6 +159,7 @@ export async function updateHabit(
   habitId: string,
   data: Partial<Pick<Habit, 'title' | 'description' | 'frequency' | 'customDays' | 'isActive' | 'order'>>
 ): Promise<void> {
+  if (useMock()) return mock.updateHabit(userId, habitId, data);
   await updateDoc(userDoc(userId, 'habits', habitId), {
     ...data,
     updatedAt: serverTimestamp(),
@@ -150,6 +167,7 @@ export async function updateHabit(
 }
 
 export async function deleteHabit(userId: string, habitId: string): Promise<void> {
+  if (useMock()) return mock.deleteHabit(userId, habitId);
   await deleteDoc(userDoc(userId, 'habits', habitId));
 }
 
@@ -158,6 +176,7 @@ export async function deleteHabit(userId: string, habitId: string): Promise<void
 // ============================================
 
 export async function getHabitLog(userId: string, date: string): Promise<HabitLog | null> {
+  if (useMock()) return mock.getHabitLog(userId, date);
   const snapshot = await getDoc(userDoc(userId, 'habitLogs', date));
   if (!snapshot.exists()) return null;
   return { date, ...snapshot.data() } as HabitLog;
@@ -168,6 +187,7 @@ export async function saveHabitLog(
   date: string,
   completedHabitIds: string[]
 ): Promise<void> {
+  if (useMock()) return mock.saveHabitLog(userId, date, completedHabitIds);
   await setDoc(userDoc(userId, 'habitLogs', date), {
     date,
     completedHabitIds,
@@ -180,6 +200,7 @@ export async function saveHabitLog(
 // ============================================
 
 export async function getGoals(userId: string, year?: number): Promise<Goal[]> {
+  if (useMock()) return mock.getGoals(userId, year);
   const constraints: QueryConstraint[] = [orderBy('order', 'asc')];
   if (year !== undefined) {
     constraints.unshift(where('year', '==', year));
@@ -190,6 +211,7 @@ export async function getGoals(userId: string, year?: number): Promise<Goal[]> {
 }
 
 export async function createGoal(userId: string, input: GoalInput): Promise<string> {
+  if (useMock()) return mock.createGoal(userId, input);
   const colRef = userCollection(userId, 'goals');
   const docRef = doc(colRef);
   await setDoc(docRef, {
@@ -207,6 +229,7 @@ export async function updateGoal(
   goalId: string,
   data: Partial<Pick<Goal, 'title' | 'description' | 'category' | 'status' | 'order'>>
 ): Promise<void> {
+  if (useMock()) return mock.updateGoal(userId, goalId, data);
   await updateDoc(userDoc(userId, 'goals', goalId), {
     ...data,
     updatedAt: serverTimestamp(),
@@ -214,6 +237,7 @@ export async function updateGoal(
 }
 
 export async function deleteGoal(userId: string, goalId: string): Promise<void> {
+  if (useMock()) return mock.deleteGoal(userId, goalId);
   await deleteDoc(userDoc(userId, 'goals', goalId));
 }
 
@@ -222,6 +246,7 @@ export async function deleteGoal(userId: string, goalId: string): Promise<void> 
 // ============================================
 
 export async function getMilestones(userId: string, goalId?: string): Promise<Milestone[]> {
+  if (useMock()) return mock.getMilestones(userId, goalId);
   const constraints: QueryConstraint[] = [orderBy('order', 'asc')];
   if (goalId !== undefined) {
     constraints.unshift(where('goalId', '==', goalId));
@@ -232,6 +257,7 @@ export async function getMilestones(userId: string, goalId?: string): Promise<Mi
 }
 
 export async function getActiveMilestonesForDashboard(userId: string): Promise<Milestone[]> {
+  if (useMock()) return mock.getActiveMilestonesForDashboard(userId);
   const q = query(
     userCollection(userId, 'milestones'),
     where('status', 'in', ['pending', 'in_progress']),
@@ -242,6 +268,7 @@ export async function getActiveMilestonesForDashboard(userId: string): Promise<M
 }
 
 export async function createMilestone(userId: string, input: MilestoneInput): Promise<string> {
+  if (useMock()) return mock.createMilestone(userId, input);
   const colRef = userCollection(userId, 'milestones');
   const docRef = doc(colRef);
   await setDoc(docRef, {
@@ -259,6 +286,7 @@ export async function updateMilestone(
   milestoneId: string,
   data: Partial<Pick<Milestone, 'title' | 'description' | 'targetDate' | 'status' | 'order'>>
 ): Promise<void> {
+  if (useMock()) return mock.updateMilestone(userId, milestoneId, data);
   await updateDoc(userDoc(userId, 'milestones', milestoneId), {
     ...data,
     updatedAt: serverTimestamp(),
@@ -266,6 +294,7 @@ export async function updateMilestone(
 }
 
 export async function deleteMilestone(userId: string, milestoneId: string): Promise<void> {
+  if (useMock()) return mock.deleteMilestone(userId, milestoneId);
   await deleteDoc(userDoc(userId, 'milestones', milestoneId));
 }
 
@@ -274,6 +303,7 @@ export async function deleteMilestone(userId: string, milestoneId: string): Prom
 // ============================================
 
 export async function getIdealSchedule(userId: string): Promise<IdealScheduleBlock[]> {
+  if (useMock()) return mock.getIdealSchedule(userId);
   const q = query(userCollection(userId, 'idealSchedule'), orderBy('order', 'asc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() }) as IdealScheduleBlock);
@@ -283,10 +313,12 @@ export async function saveIdealScheduleBlock(
   userId: string,
   block: IdealScheduleBlock
 ): Promise<void> {
+  if (useMock()) return mock.saveIdealScheduleBlock(userId, block);
   await setDoc(userDoc(userId, 'idealSchedule', block.id), block);
 }
 
 export async function deleteIdealScheduleBlock(userId: string, blockId: string): Promise<void> {
+  if (useMock()) return mock.deleteIdealScheduleBlock(userId, blockId);
   await deleteDoc(userDoc(userId, 'idealSchedule', blockId));
 }
 
@@ -295,6 +327,7 @@ export async function deleteIdealScheduleBlock(userId: string, blockId: string):
 // ============================================
 
 export async function getDailySchedule(userId: string, date: string): Promise<DailySchedule | null> {
+  if (useMock()) return mock.getDailySchedule(userId, date);
   const snapshot = await getDoc(userDoc(userId, 'dailySchedules', date));
   if (!snapshot.exists()) return null;
   return { date, ...snapshot.data() } as DailySchedule;
@@ -305,6 +338,7 @@ export async function saveDailySchedule(
   date: string,
   data: Pick<DailySchedule, 'blocks' | 'copiedFromIdeal'>
 ): Promise<void> {
+  if (useMock()) return mock.saveDailySchedule(userId, date, data);
   await setDoc(userDoc(userId, 'dailySchedules', date), {
     date,
     ...data,
@@ -317,11 +351,13 @@ export async function saveDailySchedule(
 // ============================================
 
 export async function getSettings(userId: string): Promise<UserSettings | null> {
+  if (useMock()) return mock.getSettings(userId);
   const snapshot = await getDoc(userDoc(userId, 'settings', 'general'));
   if (!snapshot.exists()) return null;
   return snapshot.data() as UserSettings;
 }
 
 export async function saveSettings(userId: string, data: Partial<UserSettings>): Promise<void> {
+  if (useMock()) return mock.saveSettings(userId, data);
   await setDoc(userDoc(userId, 'settings', 'general'), data, { merge: true });
 }
